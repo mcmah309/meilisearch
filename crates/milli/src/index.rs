@@ -5,7 +5,7 @@ use std::fs::File;
 use std::path::Path;
 
 use heed::types::*;
-use heed::{CompactionOption, Database, RoTxn, RwTxn, Unspecified};
+use heed::{CompactionOption, Database, RoTxn, RwTxn, Unspecified, WithoutTls};
 use roaring::RoaringBitmap;
 use rstar::RTree;
 use serde::{Deserialize, Serialize};
@@ -109,7 +109,7 @@ pub mod db_name {
 #[derive(Clone)]
 pub struct Index {
     /// The LMDB environment which this index is associated with.
-    pub(crate) env: heed::Env,
+    pub(crate) env: heed::Env<heed::WithoutTls>,
 
     /// Contains many different types (e.g. the fields ids map).
     pub(crate) main: Database<Unspecified, Unspecified>,
@@ -176,7 +176,7 @@ pub struct Index {
 
 impl Index {
     pub fn new_with_creation_dates<P: AsRef<Path>>(
-        mut options: heed::EnvOpenOptions,
+        mut options: heed::EnvOpenOptions<WithoutTls>,
         path: P,
         created_at: time::OffsetDateTime,
         updated_at: time::OffsetDateTime,
@@ -274,7 +274,7 @@ impl Index {
     }
 
     pub fn new<P: AsRef<Path>>(
-        options: heed::EnvOpenOptions,
+        options: heed::EnvOpenOptions<WithoutTls>,
         path: P,
         creation: bool,
     ) -> Result<Index> {
@@ -283,7 +283,7 @@ impl Index {
     }
 
     fn set_creation_dates(
-        env: &heed::Env,
+        env: &heed::Env<WithoutTls>,
         main: Database<Unspecified, Unspecified>,
         created_at: time::OffsetDateTime,
         updated_at: time::OffsetDateTime,
@@ -305,12 +305,12 @@ impl Index {
     }
 
     /// Create a read transaction to be able to read the index.
-    pub fn read_txn(&self) -> heed::Result<RoTxn<'_>> {
+    pub fn read_txn(&self) -> heed::Result<RoTxn<'_, WithoutTls>> {
         self.env.read_txn()
     }
 
     /// Create a static read transaction to be able to read the index without keeping a reference to it.
-    pub fn static_read_txn(&self) -> heed::Result<RoTxn<'static>> {
+    pub fn static_read_txn(&self) -> heed::Result<RoTxn<'static, WithoutTls>> {
         self.env.clone().static_read_txn()
     }
 
@@ -340,7 +340,9 @@ impl Index {
     }
 
     pub fn copy_to_file<P: AsRef<Path>>(&self, path: P, option: CompactionOption) -> Result<File> {
-        self.env.copy_to_file(path, option).map_err(Into::into)
+        let mut file = std::fs::File::create(path.as_ref())?;
+        self.env.copy_to_file(&mut file, option)?;
+        Ok(file)
     }
 
     /// Returns an `EnvClosingEvent` that can be used to wait for the closing event,
@@ -1870,7 +1872,7 @@ pub(crate) mod tests {
     impl TempIndex {
         /// Creates a temporary index
         pub fn new_with_map_size(size: usize) -> Self {
-            let mut options = EnvOpenOptions::new();
+            let mut options = EnvOpenOptions::new().read_txn_without_tls();
             options.map_size(size);
             let _tempdir = TempDir::new_in(".").unwrap();
             let inner = Index::new(options, _tempdir.path(), true).unwrap();

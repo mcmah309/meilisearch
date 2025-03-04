@@ -12,7 +12,7 @@ use meilisearch_types::heed::{Database, EnvOpenOptions};
 use meilisearch_types::milli::index::db_name;
 
 use crate::uuid_codec::UuidCodec;
-use crate::{try_opening_database, try_opening_poly_database};
+use crate::{try_opening_database, try_opening_poly_database_arroy_v04_to_v05};
 
 pub fn v1_10_to_v1_11(
     db_path: &Path,
@@ -23,8 +23,10 @@ pub fn v1_10_to_v1_11(
     println!("Upgrading from v1.10.0 to v1.11.0");
 
     let index_scheduler_path = db_path.join("tasks");
-    let env = unsafe { EnvOpenOptions::new().max_dbs(100).open(&index_scheduler_path) }
-        .with_context(|| format!("While trying to open {:?}", index_scheduler_path.display()))?;
+    let env = unsafe {
+        EnvOpenOptions::new().read_txn_without_tls().max_dbs(100).open(&index_scheduler_path)
+    }
+    .with_context(|| format!("While trying to open {:?}", index_scheduler_path.display()))?;
 
     let sched_rtxn = env.read_txn()?;
 
@@ -50,9 +52,12 @@ pub fn v1_10_to_v1_11(
         );
 
         let index_env = unsafe {
-            EnvOpenOptions::new().max_dbs(25).open(&index_path).with_context(|| {
-                format!("while opening index {uid} at '{}'", index_path.display())
-            })?
+            heed_arroy_v04_to_v05::EnvOpenOptions::new()
+                .max_dbs(25)
+                .open(&index_path)
+                .with_context(|| {
+                    format!("while opening index {uid} at '{}'", index_path.display())
+                })?
         };
 
         let index_rtxn = index_env.read_txn().with_context(|| {
@@ -61,9 +66,12 @@ pub fn v1_10_to_v1_11(
                 index_path.display()
             )
         })?;
-        let index_read_database =
-            try_opening_poly_database(&index_env, &index_rtxn, db_name::VECTOR_ARROY)
-                .with_context(|| format!("while updating date format for index `{uid}`"))?;
+        let index_read_database = try_opening_poly_database_arroy_v04_to_v05(
+            &index_env,
+            &index_rtxn,
+            db_name::VECTOR_ARROY,
+        )
+        .with_context(|| format!("while updating date format for index `{uid}`"))?;
 
         let mut index_wtxn = index_env.write_txn().with_context(|| {
             format!(
@@ -72,9 +80,12 @@ pub fn v1_10_to_v1_11(
             )
         })?;
 
-        let index_write_database =
-            try_opening_poly_database(&index_env, &index_wtxn, db_name::VECTOR_ARROY)
-                .with_context(|| format!("while updating date format for index `{uid}`"))?;
+        let index_write_database = try_opening_poly_database_arroy_v04_to_v05(
+            &index_env,
+            &index_wtxn,
+            db_name::VECTOR_ARROY,
+        )
+        .with_context(|| format!("while updating date format for index `{uid}`"))?;
 
         arroy_v04_to_v05::ugrade_from_prev_version(
             &index_rtxn,

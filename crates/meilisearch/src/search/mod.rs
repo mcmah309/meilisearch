@@ -1,6 +1,7 @@
 use core::fmt;
 use std::cmp::min;
 use std::collections::{BTreeMap, BTreeSet, HashSet};
+use std::ops::Deref as _;
 use std::str::FromStr;
 use std::sync::Arc;
 use std::time::{Duration, Instant};
@@ -340,7 +341,7 @@ impl SearchKind {
         vector_len: Option<usize>,
         route: Route,
     ) -> Result<(String, Arc<Embedder>, bool), ResponseError> {
-        let embedder_configs = index.embedding_configs(&index.read_txn()?)?;
+        let embedder_configs = index.embedding_configs(index.read_txn()?.deref())?;
         let embedders = index_scheduler.embedders(index_uid, embedder_configs)?;
 
         let (embedder, _, quantized) = embedders

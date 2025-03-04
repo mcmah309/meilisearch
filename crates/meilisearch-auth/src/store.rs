@@ -9,7 +9,7 @@ use std::str::FromStr;
 use std::sync::Arc;
 
 use hmac::{Hmac, Mac};
-use meilisearch_types::heed::BoxedError;
+use meilisearch_types::heed::{BoxedError, WithoutTls};
 use meilisearch_types::index_uid_pattern::IndexUidPattern;
 use meilisearch_types::keys::KeyId;
 use meilisearch_types::milli;
@@ -31,7 +31,7 @@ const KEY_ID_ACTION_INDEX_EXPIRATION_DB_NAME: &str = "keyid-action-index-expirat
 
 #[derive(Clone)]
 pub struct HeedAuthStore {
-    env: Arc<Env>,
+    env: Arc<Env<WithoutTls>>,
     keys: Database<Bytes, SerdeJson<Key>>,
     action_keyid_index_expiration: Database<KeyIdActionCodec, SerdeJson<Option<OffsetDateTime>>>,
     should_close_on_drop: bool,
@@ -45,8 +45,8 @@ impl Drop for HeedAuthStore {
     }
 }
 
-pub fn open_auth_store_env(path: &Path) -> milli::heed::Result<milli::heed::Env> {
-    let mut options = EnvOpenOptions::new();
+pub fn open_auth_store_env(path: &Path) -> milli::heed::Result<milli::heed::Env<WithoutTls>> {
+    let mut options = EnvOpenOptions::new().read_txn_without_tls();
     options.map_size(AUTH_STORE_SIZE); // 1GB
     options.max_dbs(2);
     unsafe { options.open(path) }

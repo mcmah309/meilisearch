@@ -29,10 +29,9 @@ fst = "0.4.7"
 fxhash = "0.2.1"
 geoutils = "0.5.1"
 grenad = { version = "0.5.0", default-features = false, features = ["rayon", "tempfile"] }
-heed = { version = "0.20.5", default-features = false, features = [
+heed = { path = "../../../heed/heed", version = "0.21.0", default-features = false, features = [
     "serde-json",
     "serde-bincode",
-    "read-txn-no-tls",
 ] }
 indexmap = { version = "2.7.0", features = ["serde"] }
 json-depth-checker = { path = "../json-depth-checker" }
@@ -85,7 +84,7 @@ rhai = { git = "https://github.com/rhaiscript/rhai", rev = "ef3df63121d27aacd838
     "no_time",
     "sync",
 ] }
-arroy = "0.5.0"
+arroy = { version = "0.5.0", path = "../../../arroy" }
 rand = "0.8.5"
 tracing = "0.1.41"
 ureq = { version = "2.12.1", features = ["json"] }

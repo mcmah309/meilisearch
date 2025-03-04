@@ -394,12 +394,30 @@ checksum = "96d30a06541fbafbc7f82ed10c06164cfbd2c401138f6addd8404629c4b16711"
 [[package]]
 name = "arroy"
 version = "0.5.0"
+dependencies = [
+ "bytemuck",
+ "byteorder",
+ "heed 0.21.0",
+ "log",
+ "memmap2",
+ "nohash",
+ "ordered-float",
+ "rand",
+ "rayon",
+ "roaring",
+ "tempfile",
+ "thiserror 2.0.9",
+]
+
+[[package]]
+name = "arroy"
+version = "0.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "dfc5f272f38fa063bbff0a7ab5219404e221493de005e2b4078c62d626ef567e"
 dependencies = [
  "bytemuck",
  "byteorder",
- "heed",
+ "heed 0.20.5",
  "log",
  "memmap2",
  "nohash",
@@ -418,7 +436,7 @@ source = "git+https://github.com/meilisearch/arroy/?tag=DO-NOT-DELETE-upgrade-v0
 dependencies = [
  "bytemuck",
  "byteorder",
- "heed",
+ "heed 0.20.5",
  "log",
  "memmap2",
  "nohash",
@@ -944,13 +962,13 @@ checksum = "37b2a672a2cb129a2e41c10b1224bb368f9f37a2b16b612598138befd7b37eb5"
 
 [[package]]
 name = "cc"
-version = "1.0.104"
+version = "1.2.16"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "74b6a57f98764a267ff415d50a25e6e166f3831a5071af4995296ea97d210490"
+checksum = "be714c154be609ec7f5dad223a33bf1482fff90472de28f7362806e6d4832b8c"
 dependencies = [
  "jobserver",
  "libc",
- "once_cell",
+ "shlex",
 ]
 
 [[package]]
@@ -2403,15 +2421,36 @@ checksum = "7d4f449bab7320c56003d37732a917e18798e2f1709d80263face2b4f9436ddb"
 dependencies = [
  "bitflags 2.6.0",
  "byteorder",
- "heed-traits",
- "heed-types",
+ "heed-traits 0.20.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "heed-types 0.20.1",
  "libc",
- "lmdb-master-sys",
+ "lmdb-master-sys 0.2.4 (registry+https://github.com/rust-lang/crates.io-index)",
+ "once_cell",
+ "page_size",
+ "serde",
+ "synchronoise",
+ "url",
+]
+
+[[package]]
+name = "heed"
+version = "0.21.0"
+dependencies = [
+ "bitflags 2.6.0",
+ "byteorder",
+ "heed-traits 0.20.0",
+ "heed-types 0.21.0",
+ "libc",
+ "lmdb-master-sys 0.2.4",
  "once_cell",
  "page_size",
  "synchronoise",
  "url",
 ]
+
+[[package]]
+name = "heed-traits"
+version = "0.20.0"
 
 [[package]]
 name = "heed-traits"
@@ -2427,7 +2466,18 @@ checksum = "9d3f528b053a6d700b2734eabcd0fd49cb8230647aa72958467527b0b7917114"
 dependencies = [
  "bincode",
  "byteorder",
- "heed-traits",
+ "heed-traits 0.20.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "serde",
+ "serde_json",
+]
+
+[[package]]
+name = "heed-types"
+version = "0.21.0"
+dependencies = [
+ "bincode",
+ "byteorder",
+ "heed-traits 0.20.0",
  "serde",
  "serde_json",
 ]
@@ -3469,6 +3519,15 @@ checksum = "4ee93343901ab17bd981295f2cf0026d4ad018c7c31ba84549a4ddbb47a45104"
 [[package]]
 name = "lmdb-master-sys"
 version = "0.2.4"
+dependencies = [
+ "cc",
+ "doxygen-rs",
+ "libc",
+]
+
+[[package]]
+name = "lmdb-master-sys"
+version = "0.2.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "472c3760e2a8d0f61f322fb36788021bb36d573c502b50fa3e2bcaac3ec326c9"
 dependencies = [
@@ -3513,9 +3572,9 @@ checksum = "9374ef4228402d4b7e403e5838cb880d9ee663314b0a900d5a6aabf0c213552e"
 
 [[package]]
 name = "log"
-version = "0.4.21"
+version = "0.4.26"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "90ed8c1e510134f979dbc4f070f87d4313098b704861a105fe34231c70a3901c"
+checksum = "30bde2b3dc3671ae49d8e2e9f044c7c005836e7a023ee57cffa25ab82764bb9e"
 
 [[package]]
 name = "lzma-rs"
@@ -3730,6 +3789,7 @@ dependencies = [
  "clap",
  "dump",
  "file-store",
+ "heed 0.20.5",
  "indexmap",
  "meilisearch-auth",
  "meilisearch-types",
@@ -3761,7 +3821,7 @@ name = "milli"
 version = "1.13.1"
 dependencies = [
  "allocator-api2",
- "arroy 0.5.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "arroy 0.5.0",
  "bbqueue",
  "big_s",
  "bimap",
@@ -3790,7 +3850,7 @@ dependencies = [
  "geoutils",
  "grenad",
  "hashbrown 0.15.2",
- "heed",
+ "heed 0.21.0",
  "hf-hub",
  "indexmap",
  "insta",

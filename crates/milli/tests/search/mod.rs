@@ -32,7 +32,7 @@ pub const CONTENT: &str = include_str!("../assets/test_set.ndjson");
 
 pub fn setup_search_index_with_criteria(criteria: &[Criterion]) -> Index {
     let path = tempfile::tempdir().unwrap();
-    let mut options = EnvOpenOptions::new();
+    let mut options = EnvOpenOptions::new().read_txn_without_tls();
     options.map_size(10 * 1024 * 1024); // 10 MB
     let index = Index::new(options, &path, true).unwrap();
 

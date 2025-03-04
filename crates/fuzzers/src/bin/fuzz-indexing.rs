@@ -57,7 +57,7 @@ fn main() {
         let opt = opt.clone();
 
         let handle = std::thread::spawn(move || {
-            let mut options = EnvOpenOptions::new();
+            let mut options = EnvOpenOptions::new().read_txn_without_tls();
             options.map_size(1024 * 1024 * 1024 * 1024);
             let tempdir = match opt.path {
                 Some(path) => TempDir::new_in(path).unwrap(),

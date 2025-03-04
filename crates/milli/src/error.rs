@@ -32,8 +32,6 @@ pub enum Error {
 
 #[derive(Error, Debug)]
 pub enum InternalError {
-    #[error("{}", HeedError::DatabaseClosing)]
-    DatabaseClosing,
     #[error("missing {} in the {db_name} database", key.unwrap_or("key"))]
     DatabaseMissingEntry { db_name: &'static str, key: Option<&'static str> },
     #[error("missing {key} in the fieldids weights mapping")]
@@ -80,6 +78,9 @@ pub enum InternalError {
     ArroyError(#[from] arroy::Error),
     #[error(transparent)]
     VectorEmbeddingError(#[from] crate::vector::Error),
+
+    #[error("{}", HeedError::EnvAlreadyOpened)]
+    EnvAlreadyOpened,
 }
 
 #[derive(Error, Debug)]
@@ -471,8 +472,7 @@ impl From<HeedError> for Error {
             // TODO use the encoding
             HeedError::Encoding(_) => InternalError(Serialization(Encoding { db_name: None })),
             HeedError::Decoding(_) => InternalError(Serialization(Decoding { db_name: None })),
-            HeedError::DatabaseClosing => InternalError(DatabaseClosing),
-            HeedError::BadOpenOptions { .. } => UserError(InvalidLmdbOpenOptions),
+            HeedError::EnvAlreadyOpened => InternalError(EnvAlreadyOpened),
         }
     }
 }

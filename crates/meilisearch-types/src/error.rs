@@ -500,8 +500,7 @@ impl ErrorCode for HeedError {
             HeedError::Mdb(_)
             | HeedError::Encoding(_)
             | HeedError::Decoding(_)
-            | HeedError::DatabaseClosing
-            | HeedError::BadOpenOptions { .. } => Code::Internal,
+            | HeedError::EnvAlreadyOpened => Code::Internal,
         }
     }
 }

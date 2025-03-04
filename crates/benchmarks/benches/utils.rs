@@ -65,7 +65,7 @@ pub fn base_setup(conf: &Conf) -> Index {
     }
     create_dir_all(conf.database_name).unwrap();
 
-    let mut options = EnvOpenOptions::new();
+    let mut options = EnvOpenOptions::new().read_txn_without_tls();
     options.map_size(100 * 1024 * 1024 * 1024); // 100 GB
     options.max_readers(100);
     let index = Index::new(options, conf.database_name, true).unwrap();
