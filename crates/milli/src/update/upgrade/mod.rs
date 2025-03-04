@@ -73,5 +73,7 @@ pub fn upgrade(
         current_version = target;
     }
 
+    index.put_upgrade_id(wtxn)?;
+
     Ok(regenerate_stats)
 }

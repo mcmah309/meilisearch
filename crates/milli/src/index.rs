@@ -36,6 +36,7 @@ pub const DEFAULT_MIN_WORD_LEN_TWO_TYPOS: u8 = 9;
 
 pub mod main_key {
     pub const VERSION_KEY: &str = "version";
+    pub const LAST_UPGRADE_TXN_ID: &str = "last-upgrade-txn-id";
     pub const CRITERIA_KEY: &str = "criteria";
     pub const DISPLAYED_FIELDS_KEY: &str = "displayed-fields";
     pub const DISTINCT_FIELD_KEY: &str = "distinct-field-key";
@@ -282,6 +283,63 @@ impl Index {
         Self::new_with_creation_dates(options, path, now, now, creation)
     }
 
+    /// Attempts to rollback the index at `path`.
+    ///
+    /// If `rollback_to` is not `None`, the upgrade only takes place if it can be rollbacked to the version it specifies.
+    pub fn rollback<P: AsRef<Path>>(
+        mut options: heed::EnvOpenOptions<WithoutTls>,
+        path: P,
+        rollback_to: Option<(u32, u32, u32)>,
+    ) -> Result<RollbackOutcome> {
+        unsafe { options.flags(heed::EnvFlags::PREV_SNAPSHOT) };
+        let env = unsafe { options.open(path) }?;
+        let mut wtxn = env.write_txn()?;
+        let main = env
+            .database_options()
+            .name(db_name::MAIN)
+            .create(&mut wtxn)?
+            .remap_types::<Str, BEU64>();
+
+        let Some(last_upgrade_txn_id) = main.get(&wtxn, main_key::LAST_UPGRADE_TXN_ID)? else {
+            return Ok(RollbackOutcome::NoLastUpgradeId);
+        };
+
+        let txn_id = wtxn.id() as u64;
+        if txn_id != last_upgrade_txn_id {
+            return Ok(RollbackOutcome::LastUpgradeIdMismatch {
+                current_id: txn_id,
+                last_id: last_upgrade_txn_id,
+            });
+        }
+
+        let rollback_version =
+            main.remap_data_type::<VersionCodec>().get(&wtxn, main_key::VERSION_KEY)?;
+
+        match (rollback_to, rollback_version) {
+            (Some(requested_version), None) => {
+                return Ok(RollbackOutcome::VersionMismatch {
+                    requested_version,
+                    rollback_version: None,
+                })
+            }
+            (Some(requested_version), Some(rollback_version))
+                if requested_version != rollback_version =>
+            {
+                return Ok(RollbackOutcome::VersionMismatch {
+                    requested_version,
+                    rollback_version: Some(rollback_version),
+                })
+            }
+            _ => {}
+        }
+
+        main.delete(&mut wtxn, main_key::LAST_UPGRADE_TXN_ID)?;
+
+        wtxn.commit()?;
+
+        Ok(RollbackOutcome::Rollback(rollback_version))
+    }
+
     fn set_creation_dates(
         env: &heed::Env<WithoutTls>,
         main: Database<Unspecified, Unspecified>,
@@ -366,6 +424,14 @@ impl Index {
             wtxn,
             main_key::VERSION_KEY,
             &(major, minor, patch),
+        )
+    }
+
+    pub(crate) fn put_upgrade_id(&self, wtxn: &mut RwTxn<'_>) -> heed::Result<()> {
+        self.main.remap_types::<Str, BEU64>().put(
+            wtxn,
+            main_key::LAST_UPGRADE_TXN_ID,
+            &(wtxn.id() as u64),
         )
     }
 
@@ -1821,6 +1887,19 @@ pub enum PrefixSearch {
     #[default]
     IndexingTime,
     Disabled,
+}
+
+pub enum RollbackOutcome {
+    NoLastUpgradeId,
+    LastUpgradeIdMismatch {
+        current_id: u64,
+        last_id: u64,
+    },
+    VersionMismatch {
+        requested_version: (u32, u32, u32),
+        rollback_version: Option<(u32, u32, u32)>,
+    },
+    Rollback(Option<(u32, u32, u32)>),
 }
 
 #[derive(Serialize, Deserialize)]
